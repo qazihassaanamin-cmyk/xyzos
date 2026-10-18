@@ -61,10 +61,18 @@ def day_bounds_utc(day: date) -> tuple[datetime, datetime]:
     return start_local.astimezone(timezone.utc), end_local.astimezone(timezone.utc)
 
 
-def humanise_delta(value: datetime | None) -> str:
-    """Short relative time such as "4 hours ago" or "in 2 days"."""
+def humanise_delta(value: datetime | str | None) -> str:
+    """Short relative time such as "4 hours ago" or "in 2 days".
+
+    Accepts a datetime, an ISO-8601 string (as serialised by the Lounge and
+    other JSON endpoints), or None.
+    """
     if value is None:
         return "—"
+    if isinstance(value, str):
+        value = parse_iso(value)
+        if value is None:
+            return "—"
     if value.tzinfo is None:
         value = value.replace(tzinfo=timezone.utc)
     delta = utcnow() - value
