@@ -24,7 +24,10 @@ instance/
 /app/uploads/files/
 /app/uploads/downloads/
 
-# Test / tooling caches
+# Test output / tooling artefacts
+*.txt
+!requirements.txt
+tests/artifacts/
 .pytest_cache/
 .coverage
 htmlcov/

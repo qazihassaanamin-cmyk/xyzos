@@ -17,13 +17,16 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 
 
+from app.extensions import db
+
+
 def test_migrations_upgrade_blank_database():
     """Every migration applies to a fresh SQLite database without error."""
     from alembic import command
     from alembic.config import Config
     from sqlalchemy import inspect
 
-    with tempfile.TemporaryDirectory(prefix="tavryc-mig-") as directory:
+    with tempfile.TemporaryDirectory(prefix="tavryc-mig-", ignore_cleanup_errors=True) as directory:
         database_path = os.path.join(directory, "mig.sqlite")
         previous = os.environ.get("DATABASE_URL")
         os.environ["DATABASE_URL"] = f"sqlite:///{database_path}"
@@ -37,7 +40,7 @@ def test_migrations_upgrade_blank_database():
                 config.set_main_option("script_location", str(ROOT / "migrations"))
                 command.upgrade(config, "head")
 
-                inspector = inspect(application.extensions["db"].engine)
+                inspector = inspect(db.engines[None])
                 tables = set(inspector.get_table_names())
         finally:
             if previous is None:
@@ -53,11 +56,11 @@ def test_migrations_upgrade_blank_database():
         "blockers", "milestones", "focus_sessions", "workdays",
         "workday_exceptions", "daily_checkins", "daily_reports",
         "notifications", "lounge_posts", "lounge_post_revisions",
-        "suggestions", "suggestion_votes", "knowledge_items",
+        "suggestions", "suggestion_votes", "knowledge_entries",
         "announcements", "achievements", "member_achievements",
         "member_badges", "attachments", "audit_log", "login_attempts",
         "settings", "level_definitions", "xp_rules", "challenges",
-        "challenge_progress", "activity_log", "alembic_version",
+        "challenge_progress", "audit_log", "alembic_version",
     }
     missing = required - tables
     assert not missing, f"Migrations did not create: {sorted(missing)}"
@@ -69,7 +72,7 @@ def test_lounge_posts_has_topic_column():
     from alembic.config import Config
     from sqlalchemy import inspect
 
-    with tempfile.TemporaryDirectory(prefix="tavryc-mig2-") as directory:
+    with tempfile.TemporaryDirectory(prefix="tavryc-mig2-", ignore_cleanup_errors=True) as directory:
         database_path = os.path.join(directory, "mig2.sqlite")
         previous = os.environ.get("DATABASE_URL")
         os.environ["DATABASE_URL"] = f"sqlite:///{database_path}"
@@ -83,7 +86,7 @@ def test_lounge_posts_has_topic_column():
                 config.set_main_option("script_location", str(ROOT / "migrations"))
                 command.upgrade(config, "head")
 
-                inspector = inspect(application.extensions["db"].engine)
+                inspector = inspect(db.engines[None])
                 columns = {col["name"] for col in inspector.get_columns("lounge_posts")}
         finally:
             if previous is None:
